@@ -1,0 +1,115 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 13:12:35 +0200
+Subject: [PATCH] Fix /papiergabel
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+index 28efba2eeceb40a574c8025ac82b016dec1c259e..c5e48fa17d254209ae4f88f4620f324e9c9761a2 100644
+--- a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+@@ -1,10 +1,8 @@
+ package de.hglabor.papiergabel;
+ 
++import de.hglabor.papiergabel.commands.PapiergabelCommand;
+ import de.hglabor.papiergabel.config.PapiergabelConfig;
+-import de.hglabor.papiergabel.util.PapiergabelUtils;
+-import net.minecraft.network.chat.Component;
+ import net.minecraft.server.MinecraftServer;
+-import static net.minecraft.commands.Commands.literal;
+ 
+ import java.io.File;
+ 
+@@ -15,25 +13,7 @@ public class PapiergabelMain {
+     }
+ 
+     public static void postLoad(MinecraftServer server) {
+-        server.vanillaCommandDispatcher.getDispatcher().register(
+-            literal("papiergabel")
+-                .executes(ctx -> {
+-                    ctx.getSource().sendSuccess(Component.nullToEmpty("Papiergabel is loaded correctly, have fun!"), false);
+-                    return 1;
+-                })
+-                .then(literal("reload")
+-                    .requires(stack -> stack.hasPermission(3, "papiergabel.reload"))
+-                    .executes(ctx -> {
+-                        try {
+-                            PapiergabelConfig.setup();
+-                            ctx.getSource().sendSuccess(Component.nullToEmpty("Papiergabel reload was successful!"), true);
+-                        } catch (Exception e) {
+-                            ctx.getSource().sendFailure(PapiergabelUtils.miniMessageToNMSComponent("<red>An error occurred during reloading process: " + e.getMessage() + "</red>"));
+-                            e.printStackTrace();
+-                        }
+-                        return 1;
+-                    }))
+-        );
++        server.server.getCommandMap().register("papiergabel", "papiergabel", new PapiergabelCommand());
+     }
+ 
+ }
+diff --git a/src/main/java/de/hglabor/papiergabel/commands/PapiergabelCommand.java b/src/main/java/de/hglabor/papiergabel/commands/PapiergabelCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..104b06320fe2c980b77773555a41349869939c10
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/commands/PapiergabelCommand.java
+@@ -0,0 +1,60 @@
++package de.hglabor.papiergabel.commands;
++
++import de.hglabor.papiergabel.config.PapiergabelConfig;
++import de.hglabor.papiergabel.util.PapiergabelUtils;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.minimessage.MiniMessage;
++import org.bukkit.Bukkit;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collections;
++import java.util.List;
++
++public class PapiergabelCommand extends Command {
++    private static final String BASE_PERM = "papiergabel.command.reload";
++
++    public PapiergabelCommand() {
++        super("papiergabel");
++        this.description = "Papiergabel related commands";
++        this.setPermission(BASE_PERM);
++    }
++
++    public boolean testPermission(CommandSender commandSender) {
++        if (commandSender.hasPermission(BASE_PERM)) return true;
++        commandSender.sendMessage(Bukkit.permissionMessage());
++        return false;
++    }
++
++    @Override
++    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
++        if(args.length == 0) {
++            sender.sendMessage(Component.text("Papiergabel is loaded correctly, have fun!"));
++        } else if(args.length == 1) {
++            switch (args[0]) {
++                case "reload": {
++                    if (!testPermission(sender)) return false;
++                    try {
++                        PapiergabelConfig.setup();
++                        sender.sendMessage(Component.text("Papiergabel reload was successful!"));
++                    } catch (Exception e) {
++                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>An error occurred during reloading process: " + e.getMessage() + "</red>"));
++                        e.printStackTrace();
++                    }
++                }
++            }
++        }
++        return false;
++    }
++
++    @Override
++    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
++        if(args.length <= 1) {
++            return Collections.singletonList("reload");
++        }
++        return Collections.emptyList();
++    }
++
++
++}
