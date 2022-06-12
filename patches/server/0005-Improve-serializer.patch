@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 11:44:39 +0200
+Subject: [PATCH] Improve serializer
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index 8bdf2fe51f3b4abc553cf631dae16c7deb921dfa..3ad75e50b8512fb4202c98817327313fdd1f752e 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -15,6 +15,7 @@ public class PapiergabelConfig {
+             config = YamlConfiguration.loadConfiguration(file);
+             writeDefaults(file);
+         }
++        INSTANCE = instance;
+     };
+ 
+     @Exclude
+@@ -26,25 +27,25 @@ public class PapiergabelConfig {
+     public static Messages messages = new Messages();
+ 
+     @MustSerialize
+-    public static class Messages {
++    private static class Messages {
+ 
+-        public static String flyingInSurvivalModeIsDisabled = "Flying in survival mode is disabled by the server.";
++        public String flyingInSurvivalModeIsDisabled = "Flying in survival mode is disabled by the server.";
+ 
+     }
+ 
+     public static Knockback knockback = new Knockback();
+ 
+     @MustSerialize
+-    public static class Knockback {
+-        public static double knockbackFriction = 2.0D;
+-        public static double knockbackHorizontal = 0.4D;
+-        public static double knockbackVertical = 0.4D;
+-        public static double knockbackVerticalLimit = 0.4D;
+-        public static double knockbackExtraHorizontal = 0.5D;
+-        public static double knockbackExtraVertical = 0.1D;
+-        public static boolean knockbackIsOldKnockback = true;
+-        public static boolean knockbackShouldOverrideSetVelocity = true;
+-        public static boolean knockbackCancelOverrideSetVelocity = false;
++    private static class Knockback {
++        public double knockbackFriction = 2.0D;
++        public double knockbackHorizontal = 0.4D;
++        public double knockbackVertical = 0.4D;
++        public double knockbackVerticalLimit = 0.4D;
++        public double knockbackExtraHorizontal = 0.5D;
++        public double knockbackExtraVertical = 0.1D;
++        public boolean knockbackIsOldKnockback = true;
++        public boolean knockbackShouldOverrideSetVelocity = true;
++        public boolean knockbackCancelOverrideSetVelocity = false;
+     }
+ 
+     public static void writeDefaults(File file) throws Exception {
+@@ -55,16 +56,16 @@ public class PapiergabelConfig {
+         }
+         for (Field field : thisClass.getFields()) {
+             if(!isAnnotationPresent(field, Exclude.class)) {
+-                serializeField(field);
++                serializeField(field, INSTANCE);
+             }
+         }
+         config.save(file);
+     }
+ 
+-    private static void serializeField(Field field) throws IllegalAccessException {
++    private static void serializeField(Field field, Object instance) throws IllegalAccessException {
+         if(isAnnotationPresent(field.getType(), MustSerialize.class)) {
+             for (Field nestedField : field.getType().getFields()) {
+-                serializeField(nestedField);
++                serializeField(nestedField, field.get(instance));
+             }
+         } else {
+             String fieldName = field.getName();
+@@ -72,7 +73,7 @@ public class PapiergabelConfig {
+             if(serialName != null) {
+                 fieldName = serialName.value();
+             }
+-            config.set(field.getDeclaringClass().getSimpleName() + "." + fieldName, field.get(null));
++            config.set(field.getDeclaringClass().getSimpleName() + "." + fieldName, field.get(instance));
+         }
+     }
+ 
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+index 63c772b80c305edc28de098144c4d3d5d4f53694..961bfadb1bf1c6c2d07bdcc2491fca1e2d610fe5 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+@@ -6,6 +6,7 @@ public class PapiergabelMain {
+ 
+     public static void initPapiergabel() throws Exception {
+         PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
++        System.out.println(PapiergabelConfig.messages.);
+     }
+ 
+ }

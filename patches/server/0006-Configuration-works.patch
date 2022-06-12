@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 11:53:09 +0200
+Subject: [PATCH] Configuration works
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/Header.java b/src/main/java/de/hglabor/papiergabel/config/Header.java
+index 561ccb2b6acd4e087fa2cf4ffb229a80d1aae598..e68b2f1d8f0b86b8c4b1fbd68f758f00ab27d189 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/Header.java
++++ b/src/main/java/de/hglabor/papiergabel/config/Header.java
+@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
+ import java.lang.annotation.Target;
+ 
+ @Retention(RetentionPolicy.RUNTIME)
+-@Target(ElementType.FIELD)
++@Target(ElementType.TYPE)
+ public @interface Header {
+ 
+     String value();
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index 3ad75e50b8512fb4202c98817327313fdd1f752e..05ae402ea14638665bdf6f8733d095f2ff9ddf9f 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -7,6 +7,9 @@ import java.lang.annotation.Annotation;
+ import java.lang.reflect.Field;
+ import java.nio.charset.StandardCharsets;
+ 
++@Header("""
++    This is the configuration file for papiergabel!
++    """)
+ public class PapiergabelConfig {
+ 
+     public static void set(PapiergabelConfig instance, File file) throws Exception {
+@@ -14,7 +17,10 @@ public class PapiergabelConfig {
+             file.createNewFile();
+             config = YamlConfiguration.loadConfiguration(file);
+             writeDefaults(file);
++        } else {
++            config = YamlConfiguration.loadConfiguration(file);
+         }
++        setup();
+         INSTANCE = instance;
+     };
+ 
+@@ -27,7 +33,7 @@ public class PapiergabelConfig {
+     public static Messages messages = new Messages();
+ 
+     @MustSerialize
+-    private static class Messages {
++    public static class Messages {
+ 
+         public String flyingInSurvivalModeIsDisabled = "Flying in survival mode is disabled by the server.";
+ 
+@@ -36,7 +42,7 @@ public class PapiergabelConfig {
+     public static Knockback knockback = new Knockback();
+ 
+     @MustSerialize
+-    private static class Knockback {
++    public static class Knockback {
+         public double knockbackFriction = 2.0D;
+         public double knockbackHorizontal = 0.4D;
+         public double knockbackVertical = 0.4D;
+@@ -90,12 +96,12 @@ public class PapiergabelConfig {
+                         if(serialName != null) {
+                             fieldName = serialName.value();
+                         }
+-                        nestedField.getType().getField(nestedField.getName()).set(fieldTypeObject, config.get(
++                        field.getType().getField(nestedField.getName()).set(fieldTypeObject, config.get(
+                             nestedField.getDeclaringClass().getSimpleName() + "." + fieldName
+                         ));
+                     }
+                 }
+-                field.set(null, fieldTypeObject);
++                field.set(INSTANCE, fieldTypeObject);
+             }
+         }
+     }
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+index 961bfadb1bf1c6c2d07bdcc2491fca1e2d610fe5..1f0142560b94b4f7371aace50c97979dc6e6c849 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+@@ -6,7 +6,7 @@ public class PapiergabelMain {
+ 
+     public static void initPapiergabel() throws Exception {
+         PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
+-        System.out.println(PapiergabelConfig.messages.);
++        System.out.println(PapiergabelConfig.messages.flyingInSurvivalModeIsDisabled);
+     }
+ 
+ }
