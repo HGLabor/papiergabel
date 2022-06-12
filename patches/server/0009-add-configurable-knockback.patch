@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 12:29:16 +0200
+Subject: [PATCH] add configurable knockback
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index e196b6f5181c10828da8911cf8c8127e17e8bde0..c441d15b0044868951d4fa7aefed64eac453307b 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -38,7 +38,6 @@ public class PapiergabelConfig {
+         public double knockbackVerticalLimit = 0.4D;
+         public double knockbackExtraHorizontal = 0.5D;
+         public double knockbackExtraVertical = 0.1D;
+-        public boolean knockbackIsOldKnockback = true;
+         public boolean knockbackShouldOverrideSetVelocity = true;
+         public boolean knockbackCancelOverrideSetVelocity = false;
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index e8dc99752d06ca40f17f3ad2c829b2447b703d7c..c969d4a5defec72733d9f9ccebf06cfb63e11a46 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -19,6 +19,8 @@ import java.util.Optional;
+ import java.util.UUID;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
++
++import de.hglabor.papiergabel.config.PapiergabelConfig;
+ import net.minecraft.BlockUtil;
+ import net.minecraft.advancements.CriteriaTriggers;
+ import net.minecraft.commands.arguments.EntityAnchorArgument;
+@@ -1819,6 +1821,22 @@ public abstract class LivingEntity extends Entity {
+         if (strength > 0.0D) {
+             this.hasImpulse = true;
+             Vec3 vec3d = this.getDeltaMovement();
++            // papiergabel start
++            if(PapiergabelConfig.knockback.applyKnockbackChanges) {
++                double magnitude = Math.sqrt(x * x + z * z);
++                double pX = vec3d.x / PapiergabelConfig.knockback.knockbackFriction;
++                double pY = vec3d.y / PapiergabelConfig.knockback.knockbackFriction;
++                double pZ = vec3d.z / PapiergabelConfig.knockback.knockbackFriction;
++                pX -= x / magnitude * PapiergabelConfig.knockback.knockbackHorizontal;
++                pY += PapiergabelConfig.knockback.knockbackVertical;
++                pZ -= z / magnitude * PapiergabelConfig.knockback.knockbackHorizontal;
++                if (pY > PapiergabelConfig.knockback.knockbackVerticalLimit) {
++                    pY = PapiergabelConfig.knockback.knockbackVerticalLimit;
++                }
++                this.setDeltaMovement(pX, pY, pZ);
++                return;
++            }
++            // papiergabel end
+             Vec3 vec3d1 = (new Vec3(x, 0.0D, z)).normalize().scale(strength);
+ 
+             this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
