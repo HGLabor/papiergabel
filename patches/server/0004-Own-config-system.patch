@@ -1,0 +1,305 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 11:40:36 +0200
+Subject: [PATCH] Own config system
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/EmptyConfig.java b/src/main/java/de/hglabor/papiergabel/config/EmptyConfig.java
+deleted file mode 100644
+index 489e368bb69aab9c87fb4305cc3d9b6043f3453c..0000000000000000000000000000000000000000
+--- a/src/main/java/de/hglabor/papiergabel/config/EmptyConfig.java
++++ /dev/null
+@@ -1,6 +0,0 @@
+-package de.hglabor.papiergabel.config;
+-
+-import io.papermc.paper.configuration.ConfigurationPart;
+-
+-public class EmptyConfig extends ConfigurationPart {
+-}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/Exclude.java b/src/main/java/de/hglabor/papiergabel/config/Exclude.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fcb39eccf77362fae3284147ec2818036aa3dcb9
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/Exclude.java
+@@ -0,0 +1,10 @@
++package de.hglabor.papiergabel.config;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++
++@Retention(RetentionPolicy.RUNTIME)
++@Target(ElementType.FIELD)
++public @interface Exclude {}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/Header.java b/src/main/java/de/hglabor/papiergabel/config/Header.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..561ccb2b6acd4e087fa2cf4ffb229a80d1aae598
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/Header.java
+@@ -0,0 +1,14 @@
++package de.hglabor.papiergabel.config;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++
++@Retention(RetentionPolicy.RUNTIME)
++@Target(ElementType.FIELD)
++public @interface Header {
++
++    String value();
++
++}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/MustSerialize.java b/src/main/java/de/hglabor/papiergabel/config/MustSerialize.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..86f8b379f6497083fc893c484ea2bb36406b6e1e
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/MustSerialize.java
+@@ -0,0 +1,11 @@
++package de.hglabor.papiergabel.config;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++
++@Retention(RetentionPolicy.RUNTIME)
++@Target(ElementType.TYPE)
++public @interface MustSerialize {
++}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index 6b64a32843eab35ee10a3acccc927e1bab6c7f63..8bdf2fe51f3b4abc553cf631dae16c7deb921dfa 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -1,26 +1,114 @@
+ package de.hglabor.papiergabel.config;
+ 
+-import io.papermc.paper.configuration.Configuration;
+-import io.papermc.paper.configuration.ConfigurationPart;
+-import net.kyori.adventure.text.Component;
+-import org.spongepowered.configurate.objectmapping.meta.Setting;
++import com.google.common.io.Files;
++import org.bukkit.configuration.file.YamlConfiguration;
++import java.io.File;
++import java.lang.annotation.Annotation;
++import java.lang.reflect.Field;
++import java.nio.charset.StandardCharsets;
+ 
+-public class PapiergabelConfig extends ConfigurationPart {
+-    static final int CURRENT_VERSION = 0;
+-    private static PapiergabelConfig instance;
+-    public static PapiergabelConfig get() {
+-        return instance;
++public class PapiergabelConfig {
++
++    public static void set(PapiergabelConfig instance, File file) throws Exception {
++        if(!file.exists()) {
++            file.createNewFile();
++            config = YamlConfiguration.loadConfiguration(file);
++            writeDefaults(file);
++        }
++    };
++
++    @Exclude
++    private static PapiergabelConfig INSTANCE;
++
++    @Exclude
++    public static YamlConfiguration config;
++
++    public static Messages messages = new Messages();
++
++    @MustSerialize
++    public static class Messages {
++
++        public static String flyingInSurvivalModeIsDisabled = "Flying in survival mode is disabled by the server.";
++
++    }
++
++    public static Knockback knockback = new Knockback();
++
++    @MustSerialize
++    public static class Knockback {
++        public static double knockbackFriction = 2.0D;
++        public static double knockbackHorizontal = 0.4D;
++        public static double knockbackVertical = 0.4D;
++        public static double knockbackVerticalLimit = 0.4D;
++        public static double knockbackExtraHorizontal = 0.5D;
++        public static double knockbackExtraVertical = 0.1D;
++        public static boolean knockbackIsOldKnockback = true;
++        public static boolean knockbackShouldOverrideSetVelocity = true;
++        public static boolean knockbackCancelOverrideSetVelocity = false;
+     }
+-    static void set(PapiergabelConfig instance) {
+-        PapiergabelConfig.instance = instance;
++
++    public static void writeDefaults(File file) throws Exception {
++        Class<PapiergabelConfig> thisClass = PapiergabelConfig.class;
++        Header header = thisClass.getAnnotation(Header.class);
++        if(header != null) {
++            Files.write(stringToBytes(header.value()), file);
++        }
++        for (Field field : thisClass.getFields()) {
++            if(!isAnnotationPresent(field, Exclude.class)) {
++                serializeField(field);
++            }
++        }
++        config.save(file);
+     }
+ 
+-    @Setting(Configuration.VERSION_FIELD)
+-    public int version = CURRENT_VERSION;
++    private static void serializeField(Field field) throws IllegalAccessException {
++        if(isAnnotationPresent(field.getType(), MustSerialize.class)) {
++            for (Field nestedField : field.getType().getFields()) {
++                serializeField(nestedField);
++            }
++        } else {
++            String fieldName = field.getName();
++            SerialName serialName = field.getAnnotation(SerialName.class);
++            if(serialName != null) {
++                fieldName = serialName.value();
++            }
++            config.set(field.getDeclaringClass().getSimpleName() + "." + fieldName, field.get(null));
++        }
++    }
+ 
+-    public PapiergabelConfig.Messages messages;
++    @SuppressWarnings("Deprecation")
++    public static void setup() throws Exception {
++        Class<PapiergabelConfig> thisClass = PapiergabelConfig.class;
++        for (Field field : thisClass.getFields()) {
++            if(!isAnnotationPresent(field, Exclude.class)) {
++                Object fieldTypeObject = field.getType().newInstance();
++                for (Field nestedField : field.getType().getFields()) {
++                    if(!isAnnotationPresent(nestedField, Exclude.class)) {
++                        String fieldName = nestedField.getName();
++                        SerialName serialName = nestedField.getAnnotation(SerialName.class);
++                        if(serialName != null) {
++                            fieldName = serialName.value();
++                        }
++                        nestedField.getType().getField(nestedField.getName()).set(fieldTypeObject, config.get(
++                            nestedField.getDeclaringClass().getSimpleName() + "." + fieldName
++                        ));
++                    }
++                }
++                field.set(null, fieldTypeObject);
++            }
++        }
++    }
+ 
+-    public class Messages extends ConfigurationPart {
+-        public Component flyingInSurvivalModeIsDisabled = Component.text("Flying in survival mode is disabled by the server.");
++    private static byte[] stringToBytes(String string) {
++        return string.getBytes(StandardCharsets.UTF_8);
+     }
++
++    private static boolean isAnnotationPresent(Field field, Class<? extends Annotation> annotation) {
++        return field.getAnnotation(annotation) != null;
++    }
++
++    private static boolean isAnnotationPresent(Class<?> clazz, Class<? extends Annotation> annotation) {
++        return clazz.getAnnotation(annotation) != null;
++    }
++
+ }
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfigurations.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfigurations.java
+deleted file mode 100644
+index c12c25c43031766884a8395310310fba4459cb5a..0000000000000000000000000000000000000000
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfigurations.java
++++ /dev/null
+@@ -1,54 +0,0 @@
+-package de.hglabor.papiergabel.config;
+-
+-import io.papermc.paper.configuration.ConfigurationPart;
+-import io.papermc.paper.configuration.Configurations;
+-import io.papermc.paper.configuration.serializer.PacketClassSerializer;
+-import org.spongepowered.configurate.ConfigurationOptions;
+-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+-
+-import java.lang.reflect.Type;
+-import java.nio.file.Path;
+-
+-import static io.leangen.geantyref.GenericTypeReflector.erase;
+-
+-public class PapiergabelConfigurations extends Configurations<PapiergabelConfig, EmptyConfig> {
+-
+-    private static final String GLOBAL_HEADER = String.format("""
+-            This is the global configuration file for Papiergabel.
+-            As you can see, there's a lot to configure. Some options may impact gameplay, so use
+-            with caution, and make sure you know what each option does before configuring.
+-
+-            If you need help with the configuration or have any questions related to Papiergabel,
+-            join us in our Discord.
+-
+-            The world configuration options have been moved inside
+-            their respective world folder.
+-
+-            Discord: https://discord.gg/Hx2zgZRV5a
+-            Website: https://github.com/HGLabor/papiergabel""");
+-
+-    public PapiergabelConfigurations(final Path globalFolder) {
+-        super(globalFolder, PapiergabelConfig.class, EmptyConfig.class, "papiergabel-global.yml", "papiergabel-world-defaults.yml", "papiergabel-world.yml");
+-    }
+-
+-    public PapiergabelConfigurations(Path globalFolder, Class<PapiergabelConfig> globalConfigType, Class<EmptyConfig> worldConfigClass, String globalConfigFileName, String defaultWorldConfigFileName, String worldConfigFileName) {
+-        super(globalFolder, globalConfigType, worldConfigClass, globalConfigFileName, defaultWorldConfigFileName, worldConfigFileName);
+-    }
+-
+-    @Override
+-    protected boolean isConfigType(Type type) {
+-        return ConfigurationPart.class.isAssignableFrom(erase(type));
+-    }
+-
+-    @Override
+-    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder() {
+-        return super.createGlobalLoaderBuilder()
+-            .defaultOptions(PapiergabelConfigurations::defaultGlobalOptions);
+-    }
+-
+-    private static ConfigurationOptions defaultGlobalOptions(ConfigurationOptions options) {
+-        return options
+-            .header(GLOBAL_HEADER)
+-            .serializers(builder -> builder.register(new PacketClassSerializer()));
+-    }
+-}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+index 56ada6b023d6e338ba2d4a1a44ec13ae7cdf6b88..63c772b80c305edc28de098144c4d3d5d4f53694 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+@@ -1,12 +1,11 @@
+ package de.hglabor.papiergabel.config;
+ 
+-import java.nio.file.Path;
++import java.io.File;
+ 
+ public class PapiergabelMain {
+ 
+     public static void initPapiergabel() throws Exception {
+-        PapiergabelConfigurations papiergabelConfigurations = new PapiergabelConfigurations(Path.of("config"));
+-        PapiergabelConfig.set(papiergabelConfigurations.initializeGlobalConfiguration());
++        PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
+     }
+ 
+ }
+diff --git a/src/main/java/de/hglabor/papiergabel/config/SerialName.java b/src/main/java/de/hglabor/papiergabel/config/SerialName.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e2a1196dcc276700922cd1ab5763c536f7da585a
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/SerialName.java
+@@ -0,0 +1,14 @@
++package de.hglabor.papiergabel.config;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++
++@Retention(RetentionPolicy.RUNTIME)
++@Target(ElementType.FIELD)
++public @interface SerialName {
++
++    String value();
++
++}

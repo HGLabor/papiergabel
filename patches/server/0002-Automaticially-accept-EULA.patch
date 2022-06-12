@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 10:26:36 +0200
+Subject: [PATCH] Automaticially accept EULA
+
+
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 0a843e0afbcb1af8e2641515eb244b791b819b8c..a0298291face306259cac38190cab14d3d62616d 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -125,11 +125,11 @@ public class Main {
+             }
+ 
+             // Spigot Start
+-            boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" );
++            boolean eulaAgreed = true; // papiergabel
+             if ( eulaAgreed )
+             {
+-                System.err.println( "You have used the Spigot command line EULA agreement flag." );
+-                System.err.println( "By using this setting you are indicating your agreement to Mojang's EULA (https://account.mojang.com/documents/minecraft_eula)." );
++                //System.err.println( "You have used the Spigot command line EULA agreement flag." ); // papiergabel
++                System.err.println( "By using this papiergabel build, you are indicating your agreement to Mojang's EULA (https://account.mojang.com/documents/minecraft_eula)." ); // papiergabel
+                 System.err.println( "If you do not agree to the above EULA please stop your server and remove this flag immediately." );
+             }
+             // Spigot End

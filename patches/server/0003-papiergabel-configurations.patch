@@ -1,0 +1,165 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 10:52:11 +0200
+Subject: [PATCH] papiergabel configurations
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/EmptyConfig.java b/src/main/java/de/hglabor/papiergabel/config/EmptyConfig.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..489e368bb69aab9c87fb4305cc3d9b6043f3453c
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/EmptyConfig.java
+@@ -0,0 +1,6 @@
++package de.hglabor.papiergabel.config;
++
++import io.papermc.paper.configuration.ConfigurationPart;
++
++public class EmptyConfig extends ConfigurationPart {
++}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6b64a32843eab35ee10a3acccc927e1bab6c7f63
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -0,0 +1,26 @@
++package de.hglabor.papiergabel.config;
++
++import io.papermc.paper.configuration.Configuration;
++import io.papermc.paper.configuration.ConfigurationPart;
++import net.kyori.adventure.text.Component;
++import org.spongepowered.configurate.objectmapping.meta.Setting;
++
++public class PapiergabelConfig extends ConfigurationPart {
++    static final int CURRENT_VERSION = 0;
++    private static PapiergabelConfig instance;
++    public static PapiergabelConfig get() {
++        return instance;
++    }
++    static void set(PapiergabelConfig instance) {
++        PapiergabelConfig.instance = instance;
++    }
++
++    @Setting(Configuration.VERSION_FIELD)
++    public int version = CURRENT_VERSION;
++
++    public PapiergabelConfig.Messages messages;
++
++    public class Messages extends ConfigurationPart {
++        public Component flyingInSurvivalModeIsDisabled = Component.text("Flying in survival mode is disabled by the server.");
++    }
++}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfigurations.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfigurations.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c12c25c43031766884a8395310310fba4459cb5a
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfigurations.java
+@@ -0,0 +1,54 @@
++package de.hglabor.papiergabel.config;
++
++import io.papermc.paper.configuration.ConfigurationPart;
++import io.papermc.paper.configuration.Configurations;
++import io.papermc.paper.configuration.serializer.PacketClassSerializer;
++import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
++
++import java.lang.reflect.Type;
++import java.nio.file.Path;
++
++import static io.leangen.geantyref.GenericTypeReflector.erase;
++
++public class PapiergabelConfigurations extends Configurations<PapiergabelConfig, EmptyConfig> {
++
++    private static final String GLOBAL_HEADER = String.format("""
++            This is the global configuration file for Papiergabel.
++            As you can see, there's a lot to configure. Some options may impact gameplay, so use
++            with caution, and make sure you know what each option does before configuring.
++
++            If you need help with the configuration or have any questions related to Papiergabel,
++            join us in our Discord.
++
++            The world configuration options have been moved inside
++            their respective world folder.
++
++            Discord: https://discord.gg/Hx2zgZRV5a
++            Website: https://github.com/HGLabor/papiergabel""");
++
++    public PapiergabelConfigurations(final Path globalFolder) {
++        super(globalFolder, PapiergabelConfig.class, EmptyConfig.class, "papiergabel-global.yml", "papiergabel-world-defaults.yml", "papiergabel-world.yml");
++    }
++
++    public PapiergabelConfigurations(Path globalFolder, Class<PapiergabelConfig> globalConfigType, Class<EmptyConfig> worldConfigClass, String globalConfigFileName, String defaultWorldConfigFileName, String worldConfigFileName) {
++        super(globalFolder, globalConfigType, worldConfigClass, globalConfigFileName, defaultWorldConfigFileName, worldConfigFileName);
++    }
++
++    @Override
++    protected boolean isConfigType(Type type) {
++        return ConfigurationPart.class.isAssignableFrom(erase(type));
++    }
++
++    @Override
++    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder() {
++        return super.createGlobalLoaderBuilder()
++            .defaultOptions(PapiergabelConfigurations::defaultGlobalOptions);
++    }
++
++    private static ConfigurationOptions defaultGlobalOptions(ConfigurationOptions options) {
++        return options
++            .header(GLOBAL_HEADER)
++            .serializers(builder -> builder.register(new PacketClassSerializer()));
++    }
++}
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..56ada6b023d6e338ba2d4a1a44ec13ae7cdf6b88
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+@@ -0,0 +1,12 @@
++package de.hglabor.papiergabel.config;
++
++import java.nio.file.Path;
++
++public class PapiergabelMain {
++
++    public static void initPapiergabel() throws Exception {
++        PapiergabelConfigurations papiergabelConfigurations = new PapiergabelConfigurations(Path.of("config"));
++        PapiergabelConfig.set(papiergabelConfigurations.initializeGlobalConfiguration());
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/ConfigurationPart.java b/src/main/java/io/papermc/paper/configuration/ConfigurationPart.java
+index 7a4a7a654fe2516ed894a68f2657344df9d70f4c..1a3ff861c82d20757d3d4db1f1414f5f21df9ddf 100644
+--- a/src/main/java/io/papermc/paper/configuration/ConfigurationPart.java
++++ b/src/main/java/io/papermc/paper/configuration/ConfigurationPart.java
+@@ -1,6 +1,6 @@
+ package io.papermc.paper.configuration;
+ 
+-abstract class ConfigurationPart {
++public abstract class ConfigurationPart { // papiergabel
+ 
+     public static abstract class Post extends ConfigurationPart {
+ 
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index a0298291face306259cac38190cab14d3d62616d..33d4d35d9e5c71e381425147c9df259b9466b622 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -16,6 +16,8 @@ import java.util.Objects;
+ import java.util.Optional;
+ import java.util.UUID;
+ import java.util.function.BooleanSupplier;
++
++import de.hglabor.papiergabel.config.PapiergabelMain;
+ import io.papermc.paper.world.ThreadedWorldUpgrader;
+ import joptsimple.NonOptionArgumentSpec;
+ import joptsimple.OptionParser;
+@@ -69,6 +71,11 @@ public class Main {
+ 
+     @DontObfuscate
+     public static void main(final OptionSet optionset) { // CraftBukkit - replaces main(String[] astring)
++        try {
++            PapiergabelMain.initPapiergabel();
++        } catch (Exception e) {
++            throw new RuntimeException(e);
++        }
+         SharedConstants.tryDetectVersion();
+         /* CraftBukkit start - Replace everything
+         OptionParser optionparser = new OptionParser();
