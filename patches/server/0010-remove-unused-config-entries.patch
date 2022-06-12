@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 12:36:33 +0200
+Subject: [PATCH] remove unused config entries
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index c441d15b0044868951d4fa7aefed64eac453307b..a88daa12e7cfae7039694347932e135bbec838da 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -36,10 +36,6 @@ public class PapiergabelConfig {
+         public double knockbackHorizontal = 0.4D;
+         public double knockbackVertical = 0.4D;
+         public double knockbackVerticalLimit = 0.4D;
+-        public double knockbackExtraHorizontal = 0.5D;
+-        public double knockbackExtraVertical = 0.1D;
+-        public boolean knockbackShouldOverrideSetVelocity = true;
+-        public boolean knockbackCancelOverrideSetVelocity = false;
+     }
+ 
+     public static void set(PapiergabelConfig instance, File file) throws Exception {
