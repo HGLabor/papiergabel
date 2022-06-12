@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 11:56:47 +0200
+Subject: [PATCH] Suppress warnings
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index 05ae402ea14638665bdf6f8733d095f2ff9ddf9f..8e2fef692f2bc98440fedab86a18b31cec118dbe 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -7,6 +7,7 @@ import java.lang.annotation.Annotation;
+ import java.lang.reflect.Field;
+ import java.nio.charset.StandardCharsets;
+ 
++@SuppressWarnings({"Unused", "Deprecation"})
+ @Header("""
+     This is the configuration file for papiergabel!
+     """)
+@@ -83,7 +84,6 @@ public class PapiergabelConfig {
+         }
+     }
+ 
+-    @SuppressWarnings("Deprecation")
+     public static void setup() throws Exception {
+         Class<PapiergabelConfig> thisClass = PapiergabelConfig.class;
+         for (Field field : thisClass.getFields()) {
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+index 1f0142560b94b4f7371aace50c97979dc6e6c849..63c772b80c305edc28de098144c4d3d5d4f53694 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+@@ -6,7 +6,6 @@ public class PapiergabelMain {
+ 
+     public static void initPapiergabel() throws Exception {
+         PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
+-        System.out.println(PapiergabelConfig.messages.flyingInSurvivalModeIsDisabled);
+     }
+ 
+ }
