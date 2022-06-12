@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 12:55:37 +0200
+Subject: [PATCH] Add /papiergabel command
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+index 864829d7d6bd371378929433c7e828c88f26e3d2..28efba2eeceb40a574c8025ac82b016dec1c259e 100644
+--- a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+@@ -1,6 +1,10 @@
+ package de.hglabor.papiergabel;
+ 
+ import de.hglabor.papiergabel.config.PapiergabelConfig;
++import de.hglabor.papiergabel.util.PapiergabelUtils;
++import net.minecraft.network.chat.Component;
++import net.minecraft.server.MinecraftServer;
++import static net.minecraft.commands.Commands.literal;
+ 
+ import java.io.File;
+ 
+@@ -10,4 +14,26 @@ public class PapiergabelMain {
+         PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
+     }
+ 
++    public static void postLoad(MinecraftServer server) {
++        server.vanillaCommandDispatcher.getDispatcher().register(
++            literal("papiergabel")
++                .executes(ctx -> {
++                    ctx.getSource().sendSuccess(Component.nullToEmpty("Papiergabel is loaded correctly, have fun!"), false);
++                    return 1;
++                })
++                .then(literal("reload")
++                    .requires(stack -> stack.hasPermission(3, "papiergabel.reload"))
++                    .executes(ctx -> {
++                        try {
++                            PapiergabelConfig.setup();
++                            ctx.getSource().sendSuccess(Component.nullToEmpty("Papiergabel reload was successful!"), true);
++                        } catch (Exception e) {
++                            ctx.getSource().sendFailure(PapiergabelUtils.miniMessageToNMSComponent("<red>An error occurred during reloading process: " + e.getMessage() + "</red>"));
++                            e.printStackTrace();
++                        }
++                        return 1;
++                    }))
++        );
++    }
++
+ }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index a61dc3df1d539f3c4401dffbcefeeefeefd9ec4f..a69acf60a81bdb4843b751c811c0527e716a5f4a 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -13,6 +13,7 @@ import com.mojang.authlib.GameProfileRepository;
+ import com.mojang.authlib.minecraft.MinecraftSessionService;
+ import com.mojang.datafixers.DataFixer;
+ import com.mojang.logging.LogUtils;
++import de.hglabor.papiergabel.PapiergabelMain;
+ import it.unimi.dsi.fastutil.longs.LongIterator;
+ import java.awt.image.BufferedImage;
+ import java.io.BufferedWriter;
+@@ -633,6 +634,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
+         this.connection.acceptConnections();
++        PapiergabelMain.postLoad(this); // papiergabel
+     }
+     // CraftBukkit end
+ 
