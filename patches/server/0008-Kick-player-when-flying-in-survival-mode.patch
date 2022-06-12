@@ -1,0 +1,231 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 12:18:52 +0200
+Subject: [PATCH] Kick player when flying in survival mode
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+similarity index 70%
+rename from src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
+rename to src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+index 63c772b80c305edc28de098144c4d3d5d4f53694..864829d7d6bd371378929433c7e828c88f26e3d2 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+@@ -1,4 +1,6 @@
+-package de.hglabor.papiergabel.config;
++package de.hglabor.papiergabel;
++
++import de.hglabor.papiergabel.config.PapiergabelConfig;
+ 
+ import java.io.File;
+ 
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index 8e2fef692f2bc98440fedab86a18b31cec118dbe..e196b6f5181c10828da8911cf8c8127e17e8bde0 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -13,37 +13,25 @@ import java.nio.charset.StandardCharsets;
+     """)
+ public class PapiergabelConfig {
+ 
+-    public static void set(PapiergabelConfig instance, File file) throws Exception {
+-        if(!file.exists()) {
+-            file.createNewFile();
+-            config = YamlConfiguration.loadConfiguration(file);
+-            writeDefaults(file);
+-        } else {
+-            config = YamlConfiguration.loadConfiguration(file);
+-        }
+-        setup();
+-        INSTANCE = instance;
+-    };
+-
+-    @Exclude
+-    private static PapiergabelConfig INSTANCE;
+-
+-    @Exclude
+-    public static YamlConfiguration config;
+-
++    @Exclude private static PapiergabelConfig INSTANCE;
++    @Exclude public static YamlConfiguration config;
+     public static Messages messages = new Messages();
++    public static Knockback knockback = new Knockback();
++    public static Fixes fixes = new Fixes();
+ 
+     @MustSerialize
+-    public static class Messages {
++    public static class Fixes {
++        public boolean disableFlyingInSurvivalMode = false;
++    }
+ 
++    @MustSerialize
++    public static class Messages {
+         public String flyingInSurvivalModeIsDisabled = "Flying in survival mode is disabled by the server.";
+-
+     }
+ 
+-    public static Knockback knockback = new Knockback();
+-
+     @MustSerialize
+     public static class Knockback {
++        public boolean applyKnockbackChanges = false;
+         public double knockbackFriction = 2.0D;
+         public double knockbackHorizontal = 0.4D;
+         public double knockbackVertical = 0.4D;
+@@ -55,6 +43,18 @@ public class PapiergabelConfig {
+         public boolean knockbackCancelOverrideSetVelocity = false;
+     }
+ 
++    public static void set(PapiergabelConfig instance, File file) throws Exception {
++        if(!file.exists()) {
++            file.createNewFile();
++            config = YamlConfiguration.loadConfiguration(file);
++            writeDefaults(file);
++        } else {
++            config = YamlConfiguration.loadConfiguration(file);
++        }
++        setup();
++        INSTANCE = instance;
++    };
++
+     public static void writeDefaults(File file) throws Exception {
+         Class<PapiergabelConfig> thisClass = PapiergabelConfig.class;
+         Header header = thisClass.getAnnotation(Header.class);
+@@ -97,7 +97,7 @@ public class PapiergabelConfig {
+                             fieldName = serialName.value();
+                         }
+                         field.getType().getField(nestedField.getName()).set(fieldTypeObject, config.get(
+-                            nestedField.getDeclaringClass().getSimpleName() + "." + fieldName
++                            nestedField.getDeclaringClass().getSimpleName() + "." + fieldName, nestedField.get(fieldTypeObject)
+                         ));
+                     }
+                 }
+@@ -117,5 +117,4 @@ public class PapiergabelConfig {
+     private static boolean isAnnotationPresent(Class<?> clazz, Class<? extends Annotation> annotation) {
+         return clazz.getAnnotation(annotation) != null;
+     }
+-
+ }
+diff --git a/src/main/java/de/hglabor/papiergabel/util/PapiergabelUtils.java b/src/main/java/de/hglabor/papiergabel/util/PapiergabelUtils.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..93348d9818ad2762f85d4d359f755632486214a7
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/util/PapiergabelUtils.java
+@@ -0,0 +1,18 @@
++package de.hglabor.papiergabel.util;
++
++import net.kyori.adventure.text.minimessage.MiniMessage;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.MutableComponent;
++
++public class PapiergabelUtils {
++
++    public static MutableComponent miniMessageToNMSComponent(String miniMessage) {
++        return Component.Serializer.fromJson(GsonComponentSerializer.gson().serialize(MiniMessage.miniMessage().deserialize(miniMessage)));
++    }
++
++    public static net.kyori.adventure.text.Component miniMessageToComponent(String miniMessage) {
++        return MiniMessage.miniMessage().deserialize(miniMessage);
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 33d4d35d9e5c71e381425147c9df259b9466b622..2386cbb3002d4ad8974054d0b1973e45cab51349 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -1,12 +1,10 @@
+ package net.minecraft.server;
+ 
+-import com.mojang.authlib.GameProfile;
+-import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
+ import com.mojang.datafixers.DataFixer;
+ import com.mojang.datafixers.util.Pair;
+ import com.mojang.logging.LogUtils;
+ import com.mojang.serialization.DynamicOps;
+-import com.mojang.serialization.Lifecycle;
++
+ import java.awt.GraphicsEnvironment;
+ import java.io.File;
+ import java.net.Proxy;
+@@ -14,17 +12,12 @@ import java.nio.file.Path;
+ import java.nio.file.Paths;
+ import java.util.Objects;
+ import java.util.Optional;
+-import java.util.UUID;
+ import java.util.function.BooleanSupplier;
+ 
+-import de.hglabor.papiergabel.config.PapiergabelMain;
++import de.hglabor.papiergabel.PapiergabelMain;
+ import io.papermc.paper.world.ThreadedWorldUpgrader;
+-import joptsimple.NonOptionArgumentSpec;
+-import joptsimple.OptionParser;
+ import joptsimple.OptionSet;
+-import joptsimple.OptionSpec;
+ import net.minecraft.CrashReport;
+-import net.minecraft.DefaultUncaughtExceptionHandler;
+ import net.minecraft.SharedConstants;
+ import net.minecraft.Util;
+ import net.minecraft.commands.Commands;
+@@ -35,7 +28,6 @@ import net.minecraft.network.chat.Component;
+ import net.minecraft.obfuscate.DontObfuscate;
+ import net.minecraft.resources.RegistryOps;
+ import net.minecraft.server.dedicated.DedicatedServer;
+-import net.minecraft.server.dedicated.DedicatedServerProperties;
+ import net.minecraft.server.dedicated.DedicatedServerSettings;
+ import net.minecraft.server.level.progress.LoggerChunkProgressListener;
+ import net.minecraft.server.packs.PackType;
+@@ -50,10 +42,8 @@ import net.minecraft.util.profiling.jfr.Environment;
+ import net.minecraft.util.profiling.jfr.JvmProfiler;
+ import net.minecraft.util.worldupdate.WorldUpgrader;
+ import net.minecraft.world.level.DataPackConfig;
+-import net.minecraft.world.level.GameRules;
+ import net.minecraft.world.level.dimension.LevelStem;
+ import net.minecraft.world.level.levelgen.WorldGenSettings;
+-import net.minecraft.world.level.levelgen.presets.WorldPresets;
+ import net.minecraft.world.level.storage.LevelResource;
+ import net.minecraft.world.level.storage.LevelStorageSource;
+ import net.minecraft.world.level.storage.LevelSummary;
+@@ -61,7 +51,6 @@ import org.slf4j.Logger;
+ 
+ // CraftBukkit start
+ import java.util.concurrent.atomic.AtomicReference;
+-import net.minecraft.SharedConstants;
+ 
+ public class Main {
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 630a762b71861bfe21c47a11d4fe05e1a3b7d339..dc0093ac4aea126a71f96d1ef5e06d958bbf2182 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -10,6 +10,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.tree.ArgumentCommandNode;
+ import com.mojang.brigadier.tree.CommandNode;
+ import com.mojang.logging.LogUtils;
++import de.hglabor.papiergabel.config.PapiergabelConfig;
++import de.hglabor.papiergabel.util.PapiergabelUtils;
+ import io.netty.util.concurrent.Future;
+ import io.netty.util.concurrent.GenericFutureListener;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+@@ -30,6 +32,9 @@ import java.util.function.UnaryOperator;
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
++
++import net.kyori.adventure.text.minimessage.MiniMessage;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.CrashReport;
+ import net.minecraft.CrashReportCategory;
+@@ -3344,6 +3349,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+         // CraftBukkit start
++        // papiergabel start
++        if (this.player.gameMode.isSurvival() && packet.isFlying() && PapiergabelConfig.fixes.disableFlyingInSurvivalMode) {
++            this.player.connection.disconnect(MiniMessage.miniMessage().deserialize(PapiergabelConfig.messages.flyingInSurvivalModeIsDisabled), PlayerKickEvent.Cause.FLYING_PLAYER);
++            return;
++        }
++        // papiergabel end
+         if (this.player.getAbilities().mayfly && this.player.getAbilities().flying != packet.isFlying()) {
+             PlayerToggleFlightEvent event = new PlayerToggleFlightEvent(this.player.getBukkitEntity(), packet.isFlying());
+             this.cserver.getPluginManager().callEvent(event);
