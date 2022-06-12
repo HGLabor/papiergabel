@@ -1,0 +1,153 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 12 Jun 2022 17:53:01 +0200
+Subject: [PATCH] kinda works except it doesn't
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index a511fb13924832bc8ed0dbd80711dd8c27741069..acc27660272489f5eb88778cd4cb4503f0a832d9 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -29,8 +29,10 @@ dependencies {
+           all its classes to check if they are plugins.
+           Scanning takes about 1-2 seconds so adding this speeds up the server start.
+      */
++
+     implementation("org.apache.logging.log4j:log4j-core:2.17.1") // Paper - implementation
+     annotationProcessor("org.apache.logging.log4j:log4j-core:2.17.1") // Paper - Needed to generate meta for our Log4j plugins
++
+     implementation("io.netty:netty-codec-haproxy:4.1.77.Final")
+     // Paper end
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
+diff --git a/src/main/java/de/hglabor/papiergabel/logging/FuckLoggingServiceProvider.java b/src/main/java/de/hglabor/papiergabel/logging/FuckLoggingServiceProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ffd09b548b42ed6df10e13dc71afb5c5332131b2
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/logging/FuckLoggingServiceProvider.java
+@@ -0,0 +1,40 @@
++package de.hglabor.papiergabel.logging;
++
++import org.slf4j.ILoggerFactory;
++import org.slf4j.IMarkerFactory;
++import org.slf4j.helpers.NOPServiceProvider;
++import org.slf4j.spi.MDCAdapter;
++import org.slf4j.spi.SLF4JServiceProvider;
++
++/**
++ * who tf needs logging just use sout!!!!
++ */
++public class FuckLoggingServiceProvider implements SLF4JServiceProvider {
++
++    private org.apache.logging.slf4j.SLF4JServiceProvider provider = new org.apache.logging.slf4j.SLF4JServiceProvider();
++
++    @Override
++    public ILoggerFactory getLoggerFactory() {
++        return provider.getLoggerFactory();
++    }
++
++    @Override
++    public IMarkerFactory getMarkerFactory() {
++        return provider.getMarkerFactory();
++    }
++
++    @Override
++    public MDCAdapter getMDCAdapter() {
++        return provider.getMDCAdapter();
++    }
++
++    @Override
++    public String getRequesteApiVersion() {
++        return provider.getRequesteApiVersion();
++    }
++
++    @Override
++    public void initialize() {
++        provider.initialize();
++    }
++}
+diff --git a/src/main/java/net/fabricmc/loader/impl/game/minecraft/McLibrary.java b/src/main/java/net/fabricmc/loader/impl/game/minecraft/McLibrary.java
+index 8f13713d146fdb7c2bd089dc710de11e95a53baa..23847f66f3147723fb985fb3c716ad52cabd8298 100644
+--- a/src/main/java/net/fabricmc/loader/impl/game/minecraft/McLibrary.java
++++ b/src/main/java/net/fabricmc/loader/impl/game/minecraft/McLibrary.java
+@@ -32,11 +32,10 @@ enum McLibrary implements LibraryType {
+ 	LOG4J_PLUGIN("com/mojang/util/UUIDTypeAdapter.class"), // in authlib
+ 	LOG4J_PLUGIN_2("com/mojang/patchy/LegacyXMLLayout.class"), // in patchy
+ 	LOG4J_PLUGIN_3("net/minecrell/terminalconsole/util/LoggerNamePatternSelector.class"), // in terminalconsoleappender, used by loom's log4j config
+-	GSON("com/google/gson/TypeAdapter.class"), // used by log4j plugins
+-	SLF4J_API("org/slf4j/Logger.class");
++	GSON("com/google/gson/TypeAdapter.class");
+ 
+ 	static final McLibrary[] GAME = { MC_CLIENT, MC_SERVER, MC_BUNDLER };
+-	static final McLibrary[] LOGGING = { LOG4J_API, LOG4J_CORE, LOG4J_CONFIG, LOG4J_PLUGIN, LOG4J_PLUGIN_2, LOG4J_PLUGIN_3, GSON, SLF4J_API };
++	static final McLibrary[] LOGGING = { LOG4J_API, LOG4J_CORE, LOG4J_CONFIG, LOG4J_PLUGIN, LOG4J_PLUGIN_2, LOG4J_PLUGIN_3, GSON };
+ 
+ 	private final EnvType env;
+ 	private final String[] paths;
+diff --git a/src/main/java/net/fabricmc/loader/impl/game/minecraft/MinecraftGameProvider.java b/src/main/java/net/fabricmc/loader/impl/game/minecraft/MinecraftGameProvider.java
+index 3f8403a297cb60bb8da860becad532549ae9b416..ebd66c1d7aa508114b56234317cfca87f979252a 100644
+--- a/src/main/java/net/fabricmc/loader/impl/game/minecraft/MinecraftGameProvider.java
++++ b/src/main/java/net/fabricmc/loader/impl/game/minecraft/MinecraftGameProvider.java
+@@ -71,7 +71,6 @@ public class MinecraftGameProvider implements GameProvider {
+ 	private Path realmsJar;
+ 	private final Set<Path> logJars = new HashSet<>();
+ 	private boolean log4jAvailable;
+-	private boolean slf4jAvailable;
+ 	private final List<Path> miscGameLibraries = new ArrayList<>(); // libraries not relevant for loader's uses
+ 	private Collection<Path> validParentClassPath; // computed parent class path restriction (loader+deps)
+ 	private McVersion versionData;
+@@ -199,7 +198,7 @@ public class MinecraftGameProvider implements GameProvider {
+ 			entrypoint = classifier.getClassName(envGameLib);
+ 			realmsJar = classifier.getOrigin(McLibrary.REALMS);
+ 			hasModLoader = classifier.has(McLibrary.MODLOADER);
+-			boolean hasLogLib = log4jAvailable || slf4jAvailable;
++			boolean hasLogLib = log4jAvailable;
+ 
+ 			Log.configureBuiltin(hasLogLib, !hasLogLib);
+ 
+@@ -337,12 +336,9 @@ public class MinecraftGameProvider implements GameProvider {
+ 		try {
+ 			final String logHandlerClsName;
+ 
+-            log4jAvailable = false;
+-            slf4jAvailable = false;
++            //log4jAvailable = false;
+ 			if (log4jAvailable) {
+ 				logHandlerClsName = "net.fabricmc.loader.impl.game.minecraft.Log4jLogHandler";
+-			} else if (slf4jAvailable) {
+-				logHandlerClsName = "net.fabricmc.loader.impl.game.minecraft.Slf4jLogHandler";
+ 			} else {
+ 				return;
+ 			}
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index aea18838a17fc52e1bf8cd84cd185565e6e2246d..07068cb02bb6fa4b87598bc8b2d2ac616d7d7a07 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -61,7 +61,7 @@ import org.slf4j.Logger;
+ import com.mojang.serialization.DynamicOps;
+ import org.apache.logging.log4j.Level;
+ import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.io.IoBuilder;
++//import org.apache.logging.log4j.io.IoBuilder;  // papiergabel
+ import org.bukkit.command.CommandSender;
+ import co.aikar.timings.MinecraftTimings; // Paper
+ import org.bukkit.event.server.ServerCommandEvent;
+@@ -172,8 +172,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         */
+         // Paper end
+ 
+-        System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
+-        System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
++        //System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream()); // papiergabel
++        //System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream()); // papiergabel
+         // CraftBukkit end
+ 
+         thread.setDaemon(true);
+diff --git a/src/main/resources/META-INF/services/org.slf4j.spi.SLF4JServiceProvider b/src/main/resources/META-INF/services/org.slf4j.spi.SLF4JServiceProvider
+index 3548e8857d24123b14f784e7f36eea6a49592461..baf41386457ba227055be84451f91b0b2e4db954 100644
+--- a/src/main/resources/META-INF/services/org.slf4j.spi.SLF4JServiceProvider
++++ b/src/main/resources/META-INF/services/org.slf4j.spi.SLF4JServiceProvider
+@@ -1 +1 @@
+-org.slf4j.helpers.SubstituteServiceProvider
+\ No newline at end of file
++de.hglabor.papiergabel.logging.FuckLoggingServiceProvider
+\ No newline at end of file
