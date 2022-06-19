@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 19 Jun 2022 11:08:07 +0200
+Subject: [PATCH] Don't kick player if he has op
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 58a1c3494c49b57f557f998cdf689e1d2b7fac9d..41714a0007ba51a53f4cedd3d60d7964f54ecaee 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1417,7 +1417,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                                 // CraftBukkit end
+                                     ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d7, d8, d9});
+                                     // papiergabel Start
+-                                    if (PapiergabelConfig.fixes.kickOnTooQuicklyMove) {
++                                    if (PapiergabelConfig.fixes.kickOnTooQuicklyMove && !player.hasPermissions(1)) {
+                                        this.player.connection.disconnect(MiniMessage.miniMessage().deserialize(PapiergabelConfig.messages.movedTooQuickly), PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT);
+                                     } else {
+                                         this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
