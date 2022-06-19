@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 19 Jun 2022 11:18:57 +0200
+Subject: [PATCH] Onground check
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index b1dd1d57223a0118a27589f032f0ed620eb28e4f..134b449f6a9e35cc221f5e55dd9ef48568d3b1cc 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -23,12 +23,14 @@ public class PapiergabelConfig {
+     public static class Fixes {
+         public boolean disableFlyingInSurvivalMode = false;
+         public boolean kickOnTooQuicklyMove = false;
++        public boolean kickWhenOnGroundIsSpoofed = false;
+     }
+ 
+     @MustSerialize
+     public static class Messages {
+-        public String flyingInSurvivalModeIsDisabled = "Flying in survival mode is disabled by the server.";
+-        public String movedTooQuickly = "You moved too quickly.";
++        public String flyingInSurvivalModeIsDisabled = "<red>Flying in survival mode is disabled by the server.</red>";
++        public String movedTooQuickly = "<red>You moved too quickly.</red>";
++        public String onGroundIsSpoofed = "<red>It seems like your client spoofed a on-ground packet.</red>";
+     }
+ 
+     @MustSerialize
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 41714a0007ba51a53f4cedd3d60d7964f54ecaee..0ff08114878bf0e1a1093c331a6a5d5a1553a59d 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1379,6 +1379,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                             }
+ 
+                         } else {
++                            // papiergabel Start
++                            if (PapiergabelConfig.fixes.kickWhenOnGroundIsSpoofed) {
++                                if(packet.isOnGround() && !player.level.getBlockState(player.blockPosition().below()).getBukkitMaterial().isSolid()) {
++                                    this.player.connection.disconnect(MiniMessage.miniMessage().deserialize(PapiergabelConfig.messages.onGroundIsSpoofed), PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT);
++                                }
++                            }
++                            // papiergabel End
+                             ++this.receivedMovePacketCount;
+                             int i = this.receivedMovePacketCount - this.knownMovePacketCount;
+ 
