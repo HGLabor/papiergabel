@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 19 Jun 2022 11:44:14 +0200
+Subject: [PATCH] ey
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+index c5e48fa17d254209ae4f88f4620f324e9c9761a2..1d717f416b414c863129c7ebe06916e2fa264087 100644
+--- a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+@@ -9,11 +9,15 @@ import java.io.File;
+ public class PapiergabelMain {
+ 
+     public static void initPapiergabel() throws Exception {
+-        PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
+     }
+ 
+     public static void postLoad(MinecraftServer server) {
+         server.server.getCommandMap().register("papiergabel", "papiergabel", new PapiergabelCommand());
++        try {
++            PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
++        } catch (Throwable t) {
++            t.printStackTrace();
++        }
+     }
+ 
+ }
