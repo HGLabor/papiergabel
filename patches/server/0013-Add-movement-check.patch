@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 19 Jun 2022 10:23:10 +0200
+Subject: [PATCH] Add movement check
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index a88daa12e7cfae7039694347932e135bbec838da..4367c9f44da9895a386d48985f5574a18c325fc9 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -22,11 +22,13 @@ public class PapiergabelConfig {
+     @MustSerialize
+     public static class Fixes {
+         public boolean disableFlyingInSurvivalMode = false;
++        public boolean kickOnTooQuicklyMove = false;
+     }
+ 
+     @MustSerialize
+     public static class Messages {
+         public String flyingInSurvivalModeIsDisabled = "Flying in survival mode is disabled by the server.";
++        public String movedTooQuickly = "You moved too quickly.";
+     }
+ 
+     @MustSerialize
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index dc0093ac4aea126a71f96d1ef5e06d958bbf2182..58a1c3494c49b57f557f998cdf689e1d2b7fac9d 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1416,7 +1416,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                                 if (d11 - d10 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
+                                 // CraftBukkit end
+                                     ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d7, d8, d9});
+-                                    this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
++                                    // papiergabel Start
++                                    if (PapiergabelConfig.fixes.kickOnTooQuicklyMove) {
++                                       this.player.connection.disconnect(MiniMessage.miniMessage().deserialize(PapiergabelConfig.messages.movedTooQuickly), PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT);
++                                    } else {
++                                        this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
++                                    }
++                                    // papiergabel end
+                                     return;
+                                 }
+                             }
