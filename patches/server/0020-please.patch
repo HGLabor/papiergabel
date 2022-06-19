@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 19 Jun 2022 11:58:16 +0200
+Subject: [PATCH] please
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0ff08114878bf0e1a1093c331a6a5d5a1553a59d..7758f2ce762bcaf1a032b47466243193050a8418 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1381,7 +1381,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                         } else {
+                             // papiergabel Start
+                             if (PapiergabelConfig.fixes.kickWhenOnGroundIsSpoofed) {
+-                                if(packet.isOnGround() && !player.level.getBlockState(player.blockPosition().below()).getBukkitMaterial().isSolid()) {
++                                if(packet.isOnGround() && !player.level.getBlockState(player.blockPosition().below()).getBukkitMaterial().isSolid() && player.level.getBlockState(player.blockPosition().above()).getBukkitMaterial().isAir()) {
+                                     this.player.connection.disconnect(MiniMessage.miniMessage().deserialize(PapiergabelConfig.messages.onGroundIsSpoofed), PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT);
+                                 }
+                             }
