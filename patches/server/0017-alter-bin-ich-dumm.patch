@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 19 Jun 2022 11:35:17 +0200
+Subject: [PATCH] alter bin ich dumm
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index 134b449f6a9e35cc221f5e55dd9ef48568d3b1cc..4fccc0304aac07def19f27e0d01538dae3c05579 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -48,8 +48,8 @@ public class PapiergabelConfig {
+             config = YamlConfiguration.loadConfiguration(file);
+             writeDefaults(file, true);
+         } else {
+-            writeDefaults(file, false);
+             config = YamlConfiguration.loadConfiguration(file);
++            writeDefaults(file, false);
+         }
+         setup();
+         INSTANCE = instance;
