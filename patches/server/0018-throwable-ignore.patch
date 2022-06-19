@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 19 Jun 2022 11:41:05 +0200
+Subject: [PATCH] throwable ignore
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index 4fccc0304aac07def19f27e0d01538dae3c05579..a8caf76ac93eb5f480773d4dd7e5c3784db429ac 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -49,8 +49,10 @@ public class PapiergabelConfig {
+             writeDefaults(file, true);
+         } else {
+             config = YamlConfiguration.loadConfiguration(file);
+-            writeDefaults(file, false);
+         }
++        try {
++            writeDefaults(file, false);
++        } catch (Throwable ignore) {}
+         setup();
+         INSTANCE = instance;
+     };
