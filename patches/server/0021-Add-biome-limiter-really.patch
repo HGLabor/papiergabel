@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Wed, 13 Jul 2022 19:49:48 +0200
+Subject: [PATCH] Add biome-limiter (really)
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index a8caf76ac93eb5f480773d4dd7e5c3784db429ac..ce5ce394545863be05d5a938ad07c972c4482188 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -18,6 +18,12 @@ public class PapiergabelConfig {
+     public static Messages messages = new Messages();
+     public static Knockback knockback = new Knockback();
+     public static Fixes fixes = new Fixes();
++    public static BiomeLimiter biomeLimiter = new BiomeLimiter();
++
++    @MustSerialize
++    public static class BiomeLimiter {
++        public boolean replaceOceansWithGrass = false;
++    }
+ 
+     @MustSerialize
+     public static class Fixes {
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseGeneratorSettings.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseGeneratorSettings.java
+index 371fb3cd45369baf30e283eea291c51b6da97234..2afd4ac408f8d3dd2a3dc11026d32cc63a5b7f27 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseGeneratorSettings.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseGeneratorSettings.java
+@@ -3,6 +3,8 @@ package net.minecraft.world.level.levelgen;
+ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+ import java.util.List;
++
++import de.hglabor.papiergabel.config.PapiergabelConfig;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.Registry;
+ import net.minecraft.data.BuiltinRegistries;
+@@ -59,7 +61,7 @@ public record NoiseGeneratorSettings(NoiseSettings noiseSettings, BlockState def
+     }
+ 
+     private static NoiseGeneratorSettings overworld(boolean amplified, boolean largeBiomes) {
+-        return new NoiseGeneratorSettings(NoiseSettings.OVERWORLD_NOISE_SETTINGS, Blocks.STONE.defaultBlockState(), Blocks.WATER.defaultBlockState(), NoiseRouterData.overworld(BuiltinRegistries.DENSITY_FUNCTION, largeBiomes, amplified), SurfaceRuleData.overworld(), (new OverworldBiomeBuilder()).spawnTarget(), 63, false, true, true, false);
++        return new NoiseGeneratorSettings(NoiseSettings.OVERWORLD_NOISE_SETTINGS, Blocks.STONE.defaultBlockState(), PapiergabelConfig.biomeLimiter.replaceOceansWithGrass ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.WATER.defaultBlockState(), NoiseRouterData.overworld(BuiltinRegistries.DENSITY_FUNCTION, largeBiomes, amplified), SurfaceRuleData.overworld(), (new OverworldBiomeBuilder()).spawnTarget(), 63, false, true, true, false);
+     }
+ 
+     private static NoiseGeneratorSettings caves() {
