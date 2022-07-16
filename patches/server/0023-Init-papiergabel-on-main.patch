@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sat, 16 Jul 2022 17:36:51 +0200
+Subject: [PATCH] Init papiergabel on main
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+index 1d717f416b414c863129c7ebe06916e2fa264087..5862950c3e98ba5532a554a00e57d45a11dd1081 100644
+--- a/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
++++ b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
+@@ -8,11 +8,7 @@ import java.io.File;
+ 
+ public class PapiergabelMain {
+ 
+-    public static void initPapiergabel() throws Exception {
+-    }
+-
+-    public static void postLoad(MinecraftServer server) {
+-        server.server.getCommandMap().register("papiergabel", "papiergabel", new PapiergabelCommand());
++    public static void initPapiergabel() {
+         try {
+             PapiergabelConfig.set(new PapiergabelConfig(), new File("papiergabel.yml"));
+         } catch (Throwable t) {
+@@ -20,4 +16,8 @@ public class PapiergabelMain {
+         }
+     }
+ 
++    public static void postLoad(MinecraftServer server) {
++        server.server.getCommandMap().register("papiergabel", "papiergabel", new PapiergabelCommand());
++    }
++
+ }
+diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+index ce5ce394545863be05d5a938ad07c972c4482188..4cd57aa7263f2d340ad288d4294a7d6075738ced 100644
+--- a/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
++++ b/src/main/java/de/hglabor/papiergabel/config/PapiergabelConfig.java
+@@ -16,7 +16,6 @@ public class PapiergabelConfig {
+     @Exclude private static PapiergabelConfig INSTANCE;
+     @Exclude public static YamlConfiguration config;
+     public static Messages messages = new Messages();
+-    public static Knockback knockback = new Knockback();
+     public static Fixes fixes = new Fixes();
+     public static BiomeLimiter biomeLimiter = new BiomeLimiter();
+ 
+@@ -39,15 +38,6 @@ public class PapiergabelConfig {
+         public String onGroundIsSpoofed = "<red>It seems like your client spoofed a on-ground packet.</red>";
+     }
+ 
+-    @MustSerialize
+-    public static class Knockback {
+-        public boolean applyKnockbackChanges = false;
+-        public double knockbackFriction = 2.0D;
+-        public double knockbackHorizontal = 0.4D;
+-        public double knockbackVertical = 0.4D;
+-        public double knockbackVerticalLimit = 0.4D;
+-    }
+-
+     public static void set(PapiergabelConfig instance, File file) throws Exception {
+         if(!file.exists()) {
+             file.createNewFile();
