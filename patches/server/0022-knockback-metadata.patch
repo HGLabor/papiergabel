@@ -1,0 +1,108 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sat, 16 Jul 2022 17:18:29 +0200
+Subject: [PATCH] knockback metadata
+
+
+diff --git a/src/main/java/de/hglabor/papiergabel/util/BukkitUtils.java b/src/main/java/de/hglabor/papiergabel/util/BukkitUtils.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ce5f836d5fed19a81b37f3f41176bb409c968695
+--- /dev/null
++++ b/src/main/java/de/hglabor/papiergabel/util/BukkitUtils.java
+@@ -0,0 +1,17 @@
++package de.hglabor.papiergabel.util;
++
++import org.bukkit.entity.Entity;
++
++public final class BukkitUtils {
++    private BukkitUtils() {
++    }
++
++    @SuppressWarnings("unchecked")
++    public static <T> T getValueOr(Entity entity, String key, T defaultValue) {
++        if (!entity.hasMetadata(key)) {
++            return defaultValue;
++        } else {
++            return entity.getMetadata(key).isEmpty() ? defaultValue : (T) entity.getMetadata(key).get(0).value();
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 4b27ad75da49c45db765e5b9393fe86f82dcbc78..c06217797cff66e492a44bf85f55509ec5b87327 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -19,8 +19,8 @@ import java.util.Optional;
+ import java.util.UUID;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
+-
+ import de.hglabor.papiergabel.config.PapiergabelConfig;
++import de.hglabor.papiergabel.util.BukkitUtils;
+ import net.minecraft.BlockUtil;
+ import net.minecraft.advancements.CriteriaTriggers;
+ import net.minecraft.commands.arguments.EntityAnchorArgument;
+@@ -122,6 +122,7 @@ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.PlayerTeam;
++import org.bukkit.craftbukkit.entity.CraftEntity;
+ import org.slf4j.Logger;
+ 
+ // CraftBukkit start
+@@ -1817,35 +1818,38 @@ public abstract class LivingEntity extends Entity {
+     }
+     public void knockback(double strength, double x, double z, Entity knockingBackEntity) {
+         // Paper end - add knockbacking entity parameter
+-        strength *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
++        var attribute = getBukkitLivingEntity().getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE);
++        var kbResistance = attribute != null ? attribute.getValue() : DefaultAttributes.getSupplier((EntityType<? extends LivingEntity>) this.getType()).getValue(Attributes.KNOCKBACK_RESISTANCE);
++        strength *= 1.0D - kbResistance;
+         if (strength > 0.0D) {
+             this.hasImpulse = true;
++            // papiergabel Start - Custom Knockback
+             Vec3 vec3d = this.getDeltaMovement();
+-            // papiergabel start
+-            if(PapiergabelConfig.knockback.applyKnockbackChanges) {
+-                double magnitude = Math.sqrt(x * x + z * z);
+-                double pX = vec3d.x / PapiergabelConfig.knockback.knockbackFriction;
+-                double pY = vec3d.y / PapiergabelConfig.knockback.knockbackFriction;
+-                double pZ = vec3d.z / PapiergabelConfig.knockback.knockbackFriction;
+-                pX -= x / magnitude * PapiergabelConfig.knockback.knockbackHorizontal;
+-                pY += PapiergabelConfig.knockback.knockbackVertical;
+-                pZ -= z / magnitude * PapiergabelConfig.knockback.knockbackHorizontal;
+-                if (pY > PapiergabelConfig.knockback.knockbackVerticalLimit) {
+-                    pY = PapiergabelConfig.knockback.knockbackVerticalLimit;
+-                }
+-                this.setDeltaMovement(pX, pY, pZ);
+-                return;
+-            }
+-            // papiergabel end
+             Vec3 vec3d1 = (new Vec3(x, 0.0D, z)).normalize().scale(strength);
+ 
+             this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
++            double magnitude = Math.sqrt(x * x + z * z);
++            CraftEntity bEntity = getBukkitEntity();
++            if (bEntity.hasMetadata("KB.CUSTOM")) {
++                double knockbackFriction = BukkitUtils.getValueOr(bEntity, "KB.FRICTION", 2.0D);
++                double knockbackHorizontal = BukkitUtils.getValueOr(bEntity, "KB.HORIZONTAL", 0.4D);
++                double knockbackVerticalLimit = BukkitUtils.getValueOr(bEntity, "KB.VERTICALLIMIT", 0.4D);
++                double knockbackVertical = BukkitUtils.getValueOr(bEntity, "KB.VERTICAL", 0.4D);
++                this.setDeltaMovement(
++                    (vec3d.x / knockbackFriction) - x / magnitude * knockbackHorizontal,
++                    Math.min(knockbackVerticalLimit, (vec3d.y / knockbackFriction) + knockbackVertical),
++                    (vec3d.z / knockbackFriction) - z / magnitude * knockbackHorizontal
++                );
++            } else {
++                this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + (double) strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
++            }
++            // papiergabel End - Custom Knockback
+             // Paper start - call EntityKnockbackByEntityEvent
+             Vec3 currentMovement = this.getDeltaMovement();
+             org.bukkit.util.Vector delta = new org.bukkit.util.Vector(currentMovement.x - vec3d.x, currentMovement.y - vec3d.y, currentMovement.z - vec3d.z);
+             // Restore old velocity to be able to access it in the event
+             this.setDeltaMovement(vec3d);
+-            if (knockingBackEntity == null || new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent((org.bukkit.entity.LivingEntity) getBukkitEntity(), knockingBackEntity.getBukkitEntity(), (float) strength, delta).callEvent()) {
++            if (knockingBackEntity == null || new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent((org.bukkit.entity.LivingEntity) bEntity, knockingBackEntity.getBukkitEntity(), (float) strength, delta).callEvent()) {
+                 this.setDeltaMovement(vec3d.x + delta.getX(), vec3d.y + delta.getY(), vec3d.z + delta.getZ());
+             }
+             // Paper end
