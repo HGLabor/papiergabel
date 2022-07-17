@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mooziii <63669478+mooziii@users.noreply.github.com>
+Date: Sun, 17 Jul 2022 11:23:36 +0200
+Subject: [PATCH] Don't call setDeltamovement double
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index c06217797cff66e492a44bf85f55509ec5b87327..2ae4c6a223afbfa5900776560cfaaa5fc26fc4c0 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1826,8 +1826,6 @@ public abstract class LivingEntity extends Entity {
+             // papiergabel Start - Custom Knockback
+             Vec3 vec3d = this.getDeltaMovement();
+             Vec3 vec3d1 = (new Vec3(x, 0.0D, z)).normalize().scale(strength);
+-
+-            this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
+             double magnitude = Math.sqrt(x * x + z * z);
+             CraftEntity bEntity = getBukkitEntity();
+             if (bEntity.hasMetadata("KB.CUSTOM")) {
+@@ -1841,7 +1839,7 @@ public abstract class LivingEntity extends Entity {
+                     (vec3d.z / knockbackFriction) - z / magnitude * knockbackHorizontal
+                 );
+             } else {
+-                this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + (double) strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
++                this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
+             }
+             // papiergabel End - Custom Knockback
+             // Paper start - call EntityKnockbackByEntityEvent
