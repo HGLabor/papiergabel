@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: mooziii <63669478+mooziii@users.noreply.github.com>
-Date: Sun, 12 Jun 2022 12:18:52 +0200
-Subject: [PATCH] Kick player when flying in survival mode
+Date: Fri, 29 Jul 2022 10:07:16 +0200
+Subject: [PATCH] Update upstream
 
 
 diff --git a/src/main/java/de/hglabor/papiergabel/config/PapiergabelMain.java b/src/main/java/de/hglabor/papiergabel/PapiergabelMain.java
@@ -194,29 +194,30 @@ index 33d4d35d9e5c71e381425147c9df259b9466b622..2386cbb3002d4ad8974054d0b1973e45
  public class Main {
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 630a762b71861bfe21c47a11d4fe05e1a3b7d339..dc0093ac4aea126a71f96d1ef5e06d958bbf2182 100644
+index a14710afaabf2b3b43f18ebe52eec8befff2b4ed..0d2f4007ece7178756026a43044d549971495c28 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -10,6 +10,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
- import com.mojang.brigadier.tree.ArgumentCommandNode;
- import com.mojang.brigadier.tree.CommandNode;
+@@ -7,6 +7,10 @@ import com.mojang.brigadier.StringReader;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.datafixers.util.Pair;
  import com.mojang.logging.LogUtils;
 +import de.hglabor.papiergabel.config.PapiergabelConfig;
 +import de.hglabor.papiergabel.util.PapiergabelUtils;
- import io.netty.util.concurrent.Future;
- import io.netty.util.concurrent.GenericFutureListener;
++import io.netty.util.concurrent.Future;
++import io.netty.util.concurrent.GenericFutureListener;
  import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
-@@ -30,6 +32,9 @@ import java.util.function.UnaryOperator;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+@@ -28,6 +32,8 @@ import java.util.function.UnaryOperator;
  import java.util.stream.Collectors;
  import java.util.stream.Stream;
  import javax.annotation.Nullable;
-+
 +import net.kyori.adventure.text.minimessage.MiniMessage;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
  import net.minecraft.ChatFormatting;
  import net.minecraft.CrashReport;
  import net.minecraft.CrashReportCategory;
-@@ -3344,6 +3349,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3561,6 +3567,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          // CraftBukkit start
