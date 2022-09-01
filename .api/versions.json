@@ -1,0 +1,16 @@
+{
+  "project": "papiergabel",
+  "versions": [
+    {
+      "minecraft": "1.19.2",
+      "build": 1,
+      "downloads": {
+        "paperclip": "https://github.com/HGLabor/papiergabel/releases/download/1.19.2-1/papiergabel-bundler-1.19.2-R0.1-SNAPSHOT-reobf.jar",
+        "bundler": "https://github.com/HGLabor/papiergabel/releases/download/1.19.2-1/papiergabel-bundler-1.19.2-R0.1-SNAPSHOT-reobf.jar",
+        "paperclipMojmap": "COMPILE-YOURSELF",
+        "bundlerMojmap": "COMPILE-YOURSELF",
+        "licence": "https://raw.githubusercontent.com/HGLabor/papiergabel/main/LICENSE"
+      }
+    }
+  ]
+}
